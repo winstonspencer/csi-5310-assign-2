@@ -1,0 +1,22 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch NFA",
+            "request": "launch",
+            "mainClass": "NFA",
+            "projectName": "csi-5310-assign-2_35206db3"
+        },
+        {
+            "type": "java",
+            "name": "Launch spencer_pairs",
+            "request": "launch",
+            "mainClass": "spencer_pairs",
+            "projectName": "csi-5310-assign-2_35206db3"
+        }
+    ]
+}

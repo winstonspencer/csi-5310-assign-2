@@ -3,6 +3,9 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class NFA {
+
+    private static char EPSILON = '\u03B5';
+
     private int numStates;
     private int startState;
     private Set<Integer> acceptStates;
@@ -16,51 +19,54 @@ public class NFA {
     }
 
     public boolean simulate(String input) {
-        Set<Integer> currentStates = new HashSet<>();
-        currentStates.add(startState);
-        currentStates = epsilonClosure(currentStates);
+        boolean result = false;
+
+        // Set the initial state
+        Set<Integer> nextStates = new HashSet<>();
+        nextStates.add(0);
 
         for (int i = 0; i < input.length(); i++) {
-            Set<Integer> nextStates = new HashSet<>();
-            for (int state : currentStates) {
-                int inputChar = input.charAt(i);
-                nextStates.addAll(transition(state, inputChar));
-            }
-            currentStates = epsilonClosure(nextStates);
+            nextStates = applyTransition(nextStates, input.charAt(i));
         }
 
-        for (int state : currentStates) {
-            if (acceptStates.contains(state)) {
-                return true;
+        for(int state : nextStates){
+            if(acceptStates.contains(state)){
+                result = true;
+                break;
             }
         }
-        return false;
+        return result;
     }
 
-    private Set<Integer> epsilonClosure(Set<Integer> states) {
-        Set<Integer> closure = new HashSet<>(states);
-        boolean changed = true;
-        while (changed) {
-            changed = false;
-            for (int state : closure) {
-                for (int nextState : transition(state, 0)) {
-                    if (closure.add(nextState)) {
-                        changed = true;
-                    }
+    private Set<Integer> applyTransition(Set<Integer> currentStates, char input) {
+
+        int nextState;
+        Set<Integer> nextStates = new HashSet<>();
+        for (int currentState : currentStates) {
+            for (int j = 0; j < transitionTable.length; j++) {
+                if (transitionTable[j][0] == currentState && input == transitionTable[j][1]) {
+                    nextState = transitionTable[j][2];
+                    nextStates.add(nextState);
+                    nextStates.addAll(epsilonExpansion(nextState));
                 }
             }
         }
-        return closure;
+        return nextStates;
     }
 
-    private Set<Integer> transition(int state, int input) {
-        Set<Integer> nextStates = new HashSet<>();
-        for (int i = 0; i < numStates; i++) {
-            if (transitionTable[state][i] == input) {
-                nextStates.add(i);
+    private Set<Integer> epsilonExpansion(int state) {
+        int nextEpsilonState;
+        Set<Integer> epsExpansion = new HashSet<>();
+        for (int i = 0; i < transitionTable.length; i++) {
+            if (transitionTable[i][0] == state && transitionTable[i][1] == EPSILON) {
+                nextEpsilonState = transitionTable[i][2];
+                if (!epsExpansion.contains(nextEpsilonState)) {
+                    epsExpansion.add(nextEpsilonState);
+                    epsilonExpansion(nextEpsilonState);
+                }
             }
         }
-        return nextStates;
+        return epsExpansion;
     }
 
     public static void main(String[] args) {
@@ -77,7 +83,7 @@ public class NFA {
 
         for (String inputString : inputStrings) {
             boolean accepted = nfa.simulate(inputString);
-            System.out.println(accepted ? "Accepted" : "Rejected");
+            System.out.println(accepted ? "accept" : "reject");
         }
     }
 
@@ -85,9 +91,10 @@ public class NFA {
 
         int numInputStrings = scanner.nextInt();
         String[] inputStrings = new String[numInputStrings];
+        scanner.nextLine();
 
         for (int i = 0; i < numInputStrings; i++) {
-            inputStrings[i] = scanner.next();
+            inputStrings[i] = scanner.nextLine();
         }
 
         return inputStrings;
@@ -115,9 +122,9 @@ public class NFA {
 
             transitions[i][0] = scanner.nextInt();
             input = scanner.next();
-            if(input.equalsIgnoreCase("eps")){
-                transitions[i][1] = '\u03B5';
-            }else{
+            if (input.equalsIgnoreCase("eps")) {
+                transitions[i][1] = EPSILON;
+            } else {
                 transitions[i][1] = input.charAt(0);
             }
 
