@@ -19,18 +19,25 @@ public class NFA {
     }
 
     public boolean simulate(String input) {
+
         boolean result = false;
 
         // Set the initial state
-        Set<Integer> nextStates = new HashSet<>();
-        nextStates.add(0);
+        int[] nextStates = new int[] { startState };
 
-        for (int i = 0; i < input.length(); i++) {
-            nextStates = applyTransition(nextStates, input.charAt(i));
+        if (input.length() == 0) {
+            nextStates = applyTransition(nextStates, EPSILON);
+            if(nextStates.length == 0){
+                nextStates = addState(nextStates, 0);
+            }
+        } else {
+            for (int i = 0; i < input.length(); i++) {
+                nextStates = applyTransition(nextStates, input.charAt(i));
+            }
         }
 
-        for(int state : nextStates){
-            if(acceptStates.contains(state)){
+        for (int state : nextStates) {
+            if (acceptStates.contains(state)) {
                 result = true;
                 break;
             }
@@ -38,35 +45,46 @@ public class NFA {
         return result;
     }
 
-    private Set<Integer> applyTransition(Set<Integer> currentStates, char input) {
+    private int[] applyTransition(int[] currentStates, char input) {
 
         int nextState;
-        Set<Integer> nextStates = new HashSet<>();
+        int[] nextStates = new int[0];
+        boolean[] visited = new boolean[numStates];
         for (int currentState : currentStates) {
             for (int j = 0; j < transitionTable.length; j++) {
                 if (transitionTable[j][0] == currentState && input == transitionTable[j][1]) {
                     nextState = transitionTable[j][2];
-                    nextStates.add(nextState);
-                    nextStates.addAll(epsilonExpansion(nextState));
+                    nextStates = addState(nextStates, nextState);
+                    nextStates = addEpsilonExpansion(nextState, nextStates, visited);
                 }
             }
         }
         return nextStates;
     }
 
-    private Set<Integer> epsilonExpansion(int state) {
+    private int[] addEpsilonExpansion(int state, int[] nextStates, boolean[] visited) {
+
         int nextEpsilonState;
-        Set<Integer> epsExpansion = new HashSet<>();
+        visited[state] = true;
         for (int i = 0; i < transitionTable.length; i++) {
             if (transitionTable[i][0] == state && transitionTable[i][1] == EPSILON) {
                 nextEpsilonState = transitionTable[i][2];
-                if (!epsExpansion.contains(nextEpsilonState)) {
-                    epsExpansion.add(nextEpsilonState);
-                    epsilonExpansion(nextEpsilonState);
+                if (!visited[nextEpsilonState]) {
+                    nextStates = addState(nextStates, nextEpsilonState);
+                    nextStates = addEpsilonExpansion(nextEpsilonState, nextStates, visited);
                 }
             }
         }
-        return epsExpansion;
+        return nextStates;
+    }
+
+    private int[] addState(int[] states, int newState) {
+        int[] newStates = new int[states.length + 1];
+        for (int i = 0; i < states.length; i++) {
+            newStates[i] = states[i];
+        }
+        newStates[states.length] = newState;
+        return newStates;
     }
 
     public static void main(String[] args) {
